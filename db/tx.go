@@ -8,7 +8,7 @@ import (
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
-	"github.com/skolio/pgkit/qb"
+	"github.com/rajangupta9/pgkit/qb"
 )
 
 // TxOptions mirrors pgx.TxOptions for caller convenience.

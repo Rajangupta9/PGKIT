@@ -1,4 +1,4 @@
-module github.com/skolio/pgkit
+module github.com/rajangupta9/pgkit
 
 go 1.23
 

@@ -2,7 +2,7 @@
 // It has no dependency on any database driver beyond pgx (used only for
 // identifier quoting). Import it without importing pool or connection code.
 //
-//	import "github.com/skolio/pgkit/qb"
+//	import "github.com/rajangupta9/pgkit/qb"
 //
 //	sql, args, err := qb.New("students").
 //	    Columns("id", "name").

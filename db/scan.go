@@ -7,7 +7,7 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5"
-	"github.com/skolio/pgkit/qb"
+	"github.com/rajangupta9/pgkit/qb"
 )
 
 // QueryInto executes b.BuildSelect() and scans each row into T using

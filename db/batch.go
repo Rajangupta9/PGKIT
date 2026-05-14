@@ -6,7 +6,7 @@ import (
 
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
-	"github.com/skolio/pgkit/qb"
+	"github.com/rajangupta9/pgkit/qb"
 )
 
 // Batch accumulates multiple queries and sends them in a single network

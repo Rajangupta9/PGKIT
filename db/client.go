@@ -1,5 +1,5 @@
 // Package db provides PostgreSQL connection pooling and query execution.
-// It depends on github.com/skolio/pgkit/qb for query building.
+// It depends on github.com/rajangupta9/pgkit/qb for query building.
 //
 // Use qb standalone when you only need to build SQL strings.
 // Use db when you need pool management, transactions, and execution.
@@ -28,7 +28,7 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5/pgxpool"
-	"github.com/skolio/pgkit/qb"
+	"github.com/rajangupta9/pgkit/qb"
 )
 
 // Config holds executor-level settings shared across all pools.

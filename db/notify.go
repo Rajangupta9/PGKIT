@@ -5,7 +5,7 @@ import (
 	"fmt"
 
 	"github.com/jackc/pgx/v5/pgconn"
-	"github.com/skolio/pgkit/qb"
+	"github.com/rajangupta9/pgkit/qb"
 )
 
 // Notification is a LISTEN/NOTIFY message received from PostgreSQL.

@@ -4,7 +4,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/skolio/pgkit/qb"
+	"github.com/rajangupta9/pgkit/qb"
 )
 
 // ─── helpers ─────────────────────────────────────────────────────────────────

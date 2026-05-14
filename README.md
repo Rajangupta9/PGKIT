@@ -6,7 +6,7 @@ Production-grade PostgreSQL toolkit for Go
 > **Version:** Corrected Edition (Post-Audit)  
 > **Go Version:** 1.23+  
 > **Dependencies:** `github.com/jackc/pgx/v5`, `github.com/google/uuid`  
-> **Packages:** `github.com/skolio/pgkit/qb`, `github.com/skolio/pgkit/db`
+> **Packages:** `github.com/rajangupta9/pgkit/qb`, `github.com/rajangupta9/pgkit/db`
 
 ---
 
@@ -81,8 +81,8 @@ import (
     "log"
     "os"
 
-    "github.com/skolio/pgkit/db"
-    "github.com/skolio/pgkit/qb"
+    "github.com/rajangupta9/pgkit/db"
+    "github.com/rajangupta9/pgkit/qb"
 )
 
 func main() {
