@@ -1,0 +1,48 @@
+package qb
+
+import "fmt"
+
+type joinClause struct {
+	kind      JoinType
+	table     string
+	condition string
+	lateral   bool
+	sub       *Builder
+	alias     string
+}
+
+// Join appends any JOIN variant.
+// table and condition are written verbatim — never pass user input directly.
+// For CROSS JOIN pass "" as condition.
+func (b *Builder) Join(kind JoinType, table, condition string) *Builder {
+	b.joins = append(b.joins, joinClause{kind: kind, table: table, condition: condition})
+	return b
+}
+
+func (b *Builder) InnerJoin(table, condition string) *Builder {
+	return b.Join(JoinInner, table, condition)
+}
+
+func (b *Builder) LeftJoin(table, condition string) *Builder {
+	return b.Join(JoinLeft, table, condition)
+}
+
+func (b *Builder) RightJoin(table, condition string) *Builder {
+	return b.Join(JoinRight, table, condition)
+}
+
+func (b *Builder) FullJoin(table, condition string) *Builder {
+	return b.Join(JoinFull, table, condition)
+}
+
+// LateralJoin appends a LATERAL subquery join:
+//
+//	LEFT JOIN LATERAL (SELECT …) AS alias ON TRUE
+func (b *Builder) LateralJoin(kind JoinType, sub *Builder, alias string) *Builder {
+	if sub == nil {
+		b.errs = append(b.errs, fmt.Errorf("qb: LateralJoin subquery is nil"))
+		return b
+	}
+	b.joins = append(b.joins, joinClause{kind: kind, lateral: true, sub: sub, alias: alias})
+	return b
+}
