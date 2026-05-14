@@ -67,7 +67,7 @@ Production-grade PostgreSQL toolkit for Go
 ## 2. Installation & Quick Start
 
 ```bash
-go get github.com/skolio/pgkit
+go get github.com/rajangupta9/pgkit
 ```
 
 **Minimal example:**
