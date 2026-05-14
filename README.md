@@ -1,4 +1,7 @@
-# PGKIT — Complete Technical Documentation
+# PGKIT
+Production-grade PostgreSQL toolkit for Go
+
+## PGKIT — Complete Technical Documentation
 
 > **Version:** Corrected Edition (Post-Audit)  
 > **Go Version:** 1.23+  
