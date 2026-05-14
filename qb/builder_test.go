@@ -75,6 +75,13 @@ func TestBuildSelect_Star(t *testing.T) {
 	assertArgs(t, args)
 }
 
+func TestBuildSelect_EmptyTable_Error(t *testing.T) {
+	_, _, err := qb.New("").BuildSelect()
+	if err == nil {
+		t.Fatal("expected error for empty table")
+	}
+}
+
 func TestBuildSelect_Columns(t *testing.T) {
 	sql, args := mustSelect(t, qb.New("users").Columns("id", "name", "email"))
 	assertSQL(t, sql, `SELECT "id", "name", "email" FROM "users"`)
@@ -181,6 +188,12 @@ func TestWhere_QualifiedColumn(t *testing.T) {
 	assertArgs(t, args, 5)
 }
 
+func TestWhere_ColumnWithRawTokensIsQuoted(t *testing.T) {
+	sql, args := mustSelect(t, qb.New("users").Where(qb.Where("email) OR true --", qb.OpEq, "x")))
+	assertSQL(t, sql, `SELECT * FROM "users" WHERE "email) OR true --" = $1`)
+	assertArgs(t, args, "x")
+}
+
 func TestWhere_Raw(t *testing.T) {
 	sql, args := mustSelect(t, qb.New("users").Where(qb.WhereRaw("lower(email) = ?", "test@example.com")))
 	assertSQL(t, sql, `SELECT * FROM "users" WHERE lower(email) = $1`)
@@ -277,6 +290,23 @@ func TestWhere_SubqueryIN(t *testing.T) {
 	assertArgs(t, args, "IN")
 }
 
+func TestWhere_InvalidOperatorRejected(t *testing.T) {
+	b := qb.New("users").Where(qb.Where("id", qb.Operator("= $1; DROP TABLE users; --"), 1))
+	_, _, err := b.BuildSelect()
+	if err == nil {
+		t.Fatal("expected invalid operator error")
+	}
+}
+
+func TestWhere_SubqueryInvalidOperatorRejected(t *testing.T) {
+	sub := qb.New("users").Columns("id")
+	b := qb.New("accounts").Where(qb.WhereSubquery("user_id", qb.Operator("IN); DROP TABLE accounts; --"), sub))
+	_, _, err := b.BuildSelect()
+	if err == nil {
+		t.Fatal("expected invalid subquery operator error")
+	}
+}
+
 func TestWhere_ExistsParamContinuation(t *testing.T) {
 	// Outer query already uses $1; EXISTS subquery must use $2
 	sub := qb.New("orders").Columns("1").Where(qb.Where("user_id", qb.OpEq, 99))
@@ -293,20 +323,28 @@ func TestJoin_Inner(t *testing.T) {
 	sql, _ := mustSelect(t, qb.New("orders o").
 		Columns("o.id", "u.name").
 		InnerJoin("users u", "u.id = o.user_id"))
-	assertSQL(t, sql, `SELECT "o"."id", "u"."name" FROM "orders" "o" INNER JOIN users u ON u.id = o.user_id`)
+	assertSQL(t, sql, `SELECT "o"."id", "u"."name" FROM "orders" "o" INNER JOIN "users" "u" ON u.id = o.user_id`)
 }
 
 func TestJoin_Left(t *testing.T) {
 	sql, _ := mustSelect(t, qb.New("students s").
 		LeftJoin("classes c", "c.id = s.class_id"))
-	assertSQL(t, sql, `SELECT * FROM "students" "s" LEFT JOIN classes c ON c.id = s.class_id`)
+	assertSQL(t, sql, `SELECT * FROM "students" "s" LEFT JOIN "classes" "c" ON c.id = s.class_id`)
 }
 
 func TestJoin_Multiple(t *testing.T) {
 	sql, _ := mustSelect(t, qb.New("orders o").
 		InnerJoin("users u", "u.id = o.user_id").
 		LeftJoin("discounts d", "d.id = o.discount_id"))
-	assertSQL(t, sql, `SELECT * FROM "orders" "o" INNER JOIN users u ON u.id = o.user_id LEFT JOIN discounts d ON d.id = o.discount_id`)
+	assertSQL(t, sql, `SELECT * FROM "orders" "o" INNER JOIN "users" "u" ON u.id = o.user_id LEFT JOIN "discounts" "d" ON d.id = o.discount_id`)
+}
+
+func TestJoin_InvalidKindRejected(t *testing.T) {
+	b := qb.New("orders").Join(qb.JoinType("INNER; DROP TABLE users; --"), "users u", "u.id = orders.user_id")
+	_, _, err := b.BuildSelect()
+	if err == nil {
+		t.Fatal("expected invalid join type error")
+	}
 }
 
 func TestJoin_Lateral(t *testing.T) {
@@ -374,6 +412,22 @@ func TestOrderBy_NullsFirst(t *testing.T) {
 	assertSQL(t, sql, `SELECT * FROM "users" ORDER BY "score" ASC NULLS FIRST`)
 }
 
+func TestOrderBy_InvalidDirectionRejected(t *testing.T) {
+	b := qb.New("users").OrderBy("name", qb.SortDir("ASC; DROP TABLE users; --"))
+	_, _, err := b.BuildSelect()
+	if err == nil {
+		t.Fatal("expected invalid sort direction error")
+	}
+}
+
+func TestOrderBy_InvalidNullsOrderRejected(t *testing.T) {
+	b := qb.New("users").OrderBy("name", qb.Asc, qb.NullsOrder("NULLS LAST; DROP TABLE users; --"))
+	_, _, err := b.BuildSelect()
+	if err == nil {
+		t.Fatal("expected invalid nulls order error")
+	}
+}
+
 // ─── LIMIT / OFFSET ───────────────────────────────────────────────────────────
 
 func TestLimitOffset(t *testing.T) {
@@ -412,6 +466,22 @@ func TestForShare(t *testing.T) {
 	assertSQL(t, sql, `SELECT * FROM "accounts" FOR SHARE`)
 }
 
+func TestLock_InvalidModeRejected(t *testing.T) {
+	b := qb.New("accounts").Lock(qb.LockMode("FOR UPDATE; DROP TABLE accounts; --"), qb.Wait)
+	_, _, err := b.BuildSelect()
+	if err == nil {
+		t.Fatal("expected invalid lock mode error")
+	}
+}
+
+func TestLock_InvalidWaitRejected(t *testing.T) {
+	b := qb.New("accounts").ForUpdate(qb.LockWait("NOWAIT; DROP TABLE accounts; --"))
+	_, _, err := b.BuildSelect()
+	if err == nil {
+		t.Fatal("expected invalid lock wait error")
+	}
+}
+
 // ─── CTE ─────────────────────────────────────────────────────────────────────
 
 func TestWith_CTE(t *testing.T) {
@@ -436,6 +506,16 @@ func TestWith_RecursiveCTE(t *testing.T) {
 	if !strings.Contains(sql, "WITH RECURSIVE") {
 		t.Errorf("expected WITH RECURSIVE, got: %s", sql)
 	}
+}
+
+func TestWith_MultipleCTEsRenumberParams(t *testing.T) {
+	sql, args := mustSelect(t,
+		qb.New("second").
+			With("first", "SELECT id FROM accounts WHERE org_id = $1", 10).
+			With("second", "SELECT id FROM users WHERE account_id = $1", 20).
+			Where(qb.Where("active", qb.OpEq, true)))
+	assertSQL(t, sql, `WITH "first" AS (SELECT id FROM accounts WHERE org_id = $1), "second" AS (SELECT id FROM users WHERE account_id = $2) SELECT * FROM "second" WHERE "active" = $3`)
+	assertArgs(t, args, 10, 20, true)
 }
 
 // ─── UNION ────────────────────────────────────────────────────────────────────
@@ -728,7 +808,7 @@ func TestFullQuery_StudentReport(t *testing.T) {
 			Offset(0),
 	)
 
-	if !strings.Contains(sql, `LEFT JOIN enrollments e`) {
+	if !strings.Contains(sql, `LEFT JOIN "enrollments" "e"`) {
 		t.Error("missing LEFT JOIN")
 	}
 	if !strings.Contains(sql, `IN (SELECT "id" FROM "schools"`) {

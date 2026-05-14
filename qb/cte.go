@@ -45,7 +45,7 @@ func (b *Builder) writeCTEs(sb *strings.Builder, startIdx int) (args []any, next
 
 	frags := make([]string, len(b.ctes))
 	for i, c := range b.ctes {
-		shifted := offsetParams(c.query, startIdx-1)
+		shifted := offsetParams(c.query, nextIdx-1)
 		frags[i] = fmt.Sprintf("%s AS (%s)", pgx.Identifier{c.name}.Sanitize(), shifted)
 		args = append(args, c.args...)
 		nextIdx += len(c.args)

@@ -38,16 +38,16 @@ const (
 	OpAll Operator = "= ALL" // col = ALL($n)
 
 	// Array containment
-	OpArrayContains    Operator = "@>"  // array_col @> $n
-	OpArrayContainedBy Operator = "<@"  // array_col <@ $n
-	OpArrayOverlap     Operator = "&&"  // array_col && $n
+	OpArrayContains    Operator = "@>" // array_col @> $n
+	OpArrayContainedBy Operator = "<@" // array_col <@ $n
+	OpArrayOverlap     Operator = "&&" // array_col && $n
 
 	// JSONB operators
-	OpJSONContains    Operator = "@>"  // jsonb_col @> $n
-	OpJSONContainedBy Operator = "<@"  // jsonb_col <@ $n
-	OpJSONHasKey      Operator = "?"   // jsonb_col ? $n
-	OpJSONHasAllKeys  Operator = "?&"  // jsonb_col ?& $n
-	OpJSONHasAnyKey   Operator = "?|"  // jsonb_col ?| $n
+	OpJSONContains    Operator = "@>" // jsonb_col @> $n
+	OpJSONContainedBy Operator = "<@" // jsonb_col <@ $n
+	OpJSONHasKey      Operator = "?"  // jsonb_col ? $n
+	OpJSONHasAllKeys  Operator = "?&" // jsonb_col ?& $n
+	OpJSONHasAnyKey   Operator = "?|" // jsonb_col ?| $n
 
 	// Full-text search
 	OpTextSearch Operator = "@@" // tsvector_col @@ tsquery
@@ -85,14 +85,53 @@ func (c Condition) Validate() error {
 		if c.Sub == nil {
 			return fmt.Errorf("qb: subquery condition requires a sub-query")
 		}
+		if c.Column == "" {
+			return fmt.Errorf("qb: condition column must not be empty")
+		}
+		op, ok := c.Value.(Operator)
+		if !ok {
+			return fmt.Errorf("qb: subquery operator must be qb.Operator")
+		}
+		if !isSubqueryOperator(op) {
+			return fmt.Errorf("qb: invalid subquery operator %q", op)
+		}
 	case OpRaw:
 		// always valid
 	default:
 		if c.Column == "" {
 			return fmt.Errorf("qb: condition column must not be empty")
 		}
+		if !isConditionOperator(c.Operator) {
+			return fmt.Errorf("qb: invalid condition operator %q", c.Operator)
+		}
 	}
 	return nil
+}
+
+func isConditionOperator(op Operator) bool {
+	switch op {
+	case OpEq, OpNotEq, OpLt, OpLte, OpGt, OpGte,
+		OpLike, OpILike,
+		OpIn, OpNotIn,
+		OpIsNull, OpNotNull,
+		OpBetween, OpNotBetween,
+		OpAny, OpAll,
+		OpArrayContains, OpArrayContainedBy, OpArrayOverlap,
+		OpJSONHasKey, OpJSONHasAllKeys, OpJSONHasAnyKey,
+		OpTextSearch:
+		return true
+	default:
+		return false
+	}
+}
+
+func isSubqueryOperator(op Operator) bool {
+	switch op {
+	case OpEq, OpNotEq, OpLt, OpLte, OpGt, OpGte, OpIn, OpNotIn:
+		return true
+	default:
+		return false
+	}
 }
 
 // condGroup holds either a single Condition (ANDed) or multiple joined with OR.

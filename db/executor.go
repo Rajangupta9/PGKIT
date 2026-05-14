@@ -85,6 +85,9 @@ func (e *executor) ExecSelectOne(ctx context.Context, pool *pgxpool.Pool, sql st
 
 // ExecTxWrite runs a write inside an existing transaction.
 func (e *executor) ExecTxWrite(ctx context.Context, tx pgx.Tx, sql string, args []any) (int64, error) {
+	ctx, cancel := e.withTimeout(ctx)
+	defer cancel()
+
 	start := time.Now()
 	tag, err := tx.Exec(ctx, sql, args...)
 	e.log(ctx, "tx-write", time.Since(start), err)
@@ -96,6 +99,9 @@ func (e *executor) ExecTxWrite(ctx context.Context, tx pgx.Tx, sql string, args 
 
 // ExecTxInsert runs INSERT … RETURNING "id" inside an existing transaction.
 func (e *executor) ExecTxInsert(ctx context.Context, tx pgx.Tx, sql string, args []any) (uuid.UUID, error) {
+	ctx, cancel := e.withTimeout(ctx)
+	defer cancel()
+
 	start := time.Now()
 	row := tx.QueryRow(ctx, sql, args...)
 	var id uuid.UUID
@@ -112,6 +118,9 @@ func (e *executor) ExecTxInsert(ctx context.Context, tx pgx.Tx, sql string, args
 
 // ExecTxSelect runs a SELECT inside an existing transaction.
 func (e *executor) ExecTxSelect(ctx context.Context, tx pgx.Tx, sql string, args []any) ([]map[string]any, error) {
+	ctx, cancel := e.withTimeout(ctx)
+	defer cancel()
+
 	start := time.Now()
 	rows, err := tx.Query(ctx, sql, args...)
 	if err != nil {

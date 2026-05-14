@@ -220,6 +220,7 @@ type Condition struct {
 **Validation rules:**
 - `Column` must be non-empty for all operators except `OpExists`, `OpNotExists`, `OpRaw`.
 - `Sub` must be non-nil for `OpExists`, `OpNotExists`, `OpSubquery`.
+- `Operator`, `JoinType`, `SortDir`, `NullsOrder`, `LockMode`, and `LockWait` values are validated against package constants to prevent unsafe string casts from becoming SQL.
 
 ### 3.3 Builder Lifecycle
 
@@ -305,7 +306,7 @@ qb.WhereRaw("lower(email) = ? AND created_at > ?", "foo@bar.com", someTime)
 ### 3.6 JOINs
 
 #### `(*Builder) Join(kind JoinType, table, condition string) *Builder`
-Appends a JOIN. `table` and `condition` are written **verbatim** — never pass user input.
+Appends a JOIN. `table` is quoted like a normal table expression (`"users" "u"`). `condition` is written **verbatim** — never pass user input to the condition string.
 
 Sugar methods:
 - `InnerJoin(table, condition)`
@@ -348,7 +349,7 @@ qb.New("orders").
 ### 3.8 ORDER BY / LIMIT / OFFSET
 
 #### `(*Builder) OrderBy(col string, dir SortDir, nulls ...NullsOrder) *Builder`
-Appends an ORDER BY clause. `nulls` is optional.
+Appends an ORDER BY clause. `col` is quoted as an identifier path. `dir` and `nulls` are validated against package constants; `nulls` is optional.
 
 ```go
 qb.New("users").OrderBy("score", qb.Desc, qb.NullsLast)
@@ -370,7 +371,7 @@ Appends `FOR UPDATE [NOWAIT | SKIP LOCKED]`.
 Appends `FOR SHARE [NOWAIT | SKIP LOCKED]`.
 
 #### `(*Builder) Lock(mode LockMode, wait LockWait) *Builder`
-Sets a custom lock mode.
+Sets a custom lock mode. `mode` and `wait` are validated against package constants.
 
 ### 3.10 RETURNING Clauses
 
@@ -508,6 +509,11 @@ qb.QuoteIdent("my table") // → `"my table"`
 3. If already wrapped in double quotes → returned as-is.
 4. Otherwise → quoted via `pgx.Identifier.Sanitize()`.
 
+**Strict identifier paths (`quoteIdentRef`):**
+- Used by WHERE, ORDER BY, and RETURNING.
+- Splits `alias.col` paths and quotes every part.
+- Never treats spaces, parentheses, or operators as raw SQL.
+
 **Table expressions (`quoteTableExpr`):**
 - Handles plain names, `schema.table`, and `table alias`.
 - Aliases are auto-quoted.
@@ -516,9 +522,10 @@ qb.QuoteIdent("my table") // → `"my table"`
 
 ```go
 var (
-    ErrNoTable   = fmt.Errorf("qb: table name must not be empty")
-    ErrEmptyData = fmt.Errorf("qb: data map must not be empty")
-    ErrEmptyRows = fmt.Errorf("qb: batch rows must not be empty")
+    ErrNilBuilder = fmt.Errorf("qb: builder is nil")
+    ErrNoTable    = fmt.Errorf("qb: table name must not be empty")
+    ErrEmptyData  = fmt.Errorf("qb: data map must not be empty")
+    ErrEmptyRows  = fmt.Errorf("qb: batch rows must not be empty")
 )
 ```
 
@@ -876,10 +883,13 @@ Several APIs accept raw SQL fragments by design. **Never pass user input to thes
 | `OnConflict(clause)` | Full ON CONFLICT clause |
 | `WhereRaw(expr, ...)` | Raw WHERE fragment |
 | `With(name, query, ...)` | CTE query string |
+| `ExecSQL`, `QuerySQL`, `ExecRaw`, `QueryRaw` | Full SQL string |
+| `Batch.Add`, `Batch.AddExec` | Full SQL string |
 
 **Mitigation:**
 - Use bound parameters (`?` or builder conditions) for all user data.
-- Validate/sanitize table/column names via an allowlist before passing to `qb.New` or `Columns`.
+- Validate table/column names via an allowlist before passing user-controlled values to identifier APIs.
+- Never pass user-controlled text to expression APIs such as `Columns("expr")`, `Having`, `WindowCol`, `OnConflict`, `WhereRaw`, or CTE query strings.
 
 ### Builder Mutation Safety
 
@@ -992,7 +1002,7 @@ If you see connection timeouts on GCP Cloud Run or similar environments, set `Fo
 - `BuildUpdate(data map[string]any) (sql string, args []any, err error)`
 - `BuildDelete() (sql string, args []any, err error)`
 
-**Errors:** `ErrNoTable`, `ErrEmptyData`, `ErrEmptyRows`
+**Errors:** `ErrNilBuilder`, `ErrNoTable`, `ErrEmptyData`, `ErrEmptyRows`
 
 ### `db` Package
 

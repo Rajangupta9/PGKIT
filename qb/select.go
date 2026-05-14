@@ -106,9 +106,9 @@ func (b *Builder) buildSelectFrom(paramStart int) (string, []any, error) {
 			fmt.Fprintf(&sb, " %s JOIN LATERAL (%s) %s ON TRUE",
 				j.kind, subSQL, pgx.Identifier{j.alias}.Sanitize())
 		case j.kind == JoinCross:
-			fmt.Fprintf(&sb, " CROSS JOIN %s", j.table)
+			fmt.Fprintf(&sb, " CROSS JOIN %s", quoteTableExpr(j.table))
 		default:
-			fmt.Fprintf(&sb, " %s JOIN %s ON %s", j.kind, j.table, j.condition)
+			fmt.Fprintf(&sb, " %s JOIN %s ON %s", j.kind, quoteTableExpr(j.table), j.condition)
 		}
 	}
 
@@ -147,7 +147,7 @@ func (b *Builder) buildSelectFrom(paramStart int) (string, []any, error) {
 	if len(b.orders) > 0 {
 		parts := make([]string, len(b.orders))
 		for i, o := range b.orders {
-			part := fmt.Sprintf("%s %s", quoteIdentExpr(o.column), o.dir)
+			part := fmt.Sprintf("%s %s", quoteIdentRef(o.column), o.dir)
 			if o.nulls != "" {
 				part += " " + string(o.nulls)
 			}

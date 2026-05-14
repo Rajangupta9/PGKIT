@@ -1,6 +1,9 @@
 package qb
 
-import "strings"
+import (
+	"fmt"
+	"strings"
+)
 
 // ─── GROUP BY / HAVING ────────────────────────────────────────────────────────
 
@@ -32,12 +35,28 @@ type orderClause struct {
 //
 //	b.OrderBy("created_at", qb.Desc, qb.NullsLast)
 func (b *Builder) OrderBy(col string, dir SortDir, nulls ...NullsOrder) *Builder {
+	if !isSortDir(dir) {
+		b.errs = append(b.errs, fmt.Errorf("qb: invalid sort direction %q", dir))
+		return b
+	}
 	o := orderClause{column: col, dir: dir}
 	if len(nulls) > 0 {
+		if !isNullsOrder(nulls[0]) {
+			b.errs = append(b.errs, fmt.Errorf("qb: invalid nulls order %q", nulls[0]))
+			return b
+		}
 		o.nulls = nulls[0]
 	}
 	b.orders = append(b.orders, o)
 	return b
+}
+
+func isSortDir(dir SortDir) bool {
+	return dir == Asc || dir == Desc
+}
+
+func isNullsOrder(nulls NullsOrder) bool {
+	return nulls == NullsFirst || nulls == NullsLast
 }
 
 // ─── LIMIT / OFFSET ───────────────────────────────────────────────────────────
@@ -52,6 +71,10 @@ func (b *Builder) Offset(n int) *Builder { b.offsetVal = n; return b }
 
 // ForUpdate appends FOR UPDATE [NOWAIT | SKIP LOCKED].
 func (b *Builder) ForUpdate(wait LockWait) *Builder {
+	if !isLockWait(wait) {
+		b.errs = append(b.errs, fmt.Errorf("qb: invalid lock wait %q", wait))
+		return b
+	}
 	b.lockMode = LockForUpdate
 	b.lockWait = wait
 	return b
@@ -59,6 +82,10 @@ func (b *Builder) ForUpdate(wait LockWait) *Builder {
 
 // ForShare appends FOR SHARE [NOWAIT | SKIP LOCKED].
 func (b *Builder) ForShare(wait LockWait) *Builder {
+	if !isLockWait(wait) {
+		b.errs = append(b.errs, fmt.Errorf("qb: invalid lock wait %q", wait))
+		return b
+	}
 	b.lockMode = LockForShare
 	b.lockWait = wait
 	return b
@@ -66,9 +93,35 @@ func (b *Builder) ForShare(wait LockWait) *Builder {
 
 // Lock sets a custom lock mode.
 func (b *Builder) Lock(mode LockMode, wait LockWait) *Builder {
+	if !isLockMode(mode) {
+		b.errs = append(b.errs, fmt.Errorf("qb: invalid lock mode %q", mode))
+		return b
+	}
+	if !isLockWait(wait) {
+		b.errs = append(b.errs, fmt.Errorf("qb: invalid lock wait %q", wait))
+		return b
+	}
 	b.lockMode = mode
 	b.lockWait = wait
 	return b
+}
+
+func isLockMode(mode LockMode) bool {
+	switch mode {
+	case LockForUpdate, LockForShare, LockForNoKeyUpdate, LockForKeyShare:
+		return true
+	default:
+		return false
+	}
+}
+
+func isLockWait(wait LockWait) bool {
+	switch wait {
+	case Wait, NoWait, SkipLocked:
+		return true
+	default:
+		return false
+	}
 }
 
 // ─── RETURNING ────────────────────────────────────────────────────────────────
@@ -102,7 +155,7 @@ func (b *Builder) returningClause(def returningMode) string {
 	case returningColumns:
 		quoted := make([]string, len(b.retCols))
 		for i, c := range b.retCols {
-			quoted[i] = quoteIdentExpr(c)
+			quoted[i] = quoteIdentRef(c)
 		}
 		return " RETURNING " + strings.Join(quoted, ", ")
 	default: // returningNone or any unknown — no clause

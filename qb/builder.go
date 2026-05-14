@@ -32,6 +32,8 @@
 //	condition.go— Operator constants + Condition constructors
 package qb
 
+import "strings"
+
 // Builder constructs parameterised PostgreSQL queries.
 // All methods return the same pointer for chaining.
 // Errors accumulate and are returned on the first Build* call.
@@ -99,8 +101,14 @@ func (b *Builder) HasReturning() bool {
 }
 
 func (b *Builder) firstError() error {
+	if b == nil {
+		return ErrNilBuilder
+	}
 	if len(b.errs) > 0 {
 		return b.errs[0]
+	}
+	if strings.TrimSpace(b.table) == "" {
+		return ErrNoTable
 	}
 	return nil
 }

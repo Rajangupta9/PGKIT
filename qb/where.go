@@ -69,7 +69,7 @@ func (b *Builder) buildWhereFrom(startIdx int) (clause string, args []any, err e
 }
 
 func (b *Builder) renderCond(cond Condition, idx int) (frag string, args []any, err error) {
-	col := quoteIdentExpr(cond.Column)
+	col := quoteIdentRef(cond.Column)
 
 	switch cond.Operator {
 	case OpExists:

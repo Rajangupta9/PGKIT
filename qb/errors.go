@@ -6,9 +6,10 @@ import "fmt"
 const MaxQueryParams = 65535
 
 var (
-	ErrNoTable   = fmt.Errorf("qb: table name must not be empty")
-	ErrEmptyData = fmt.Errorf("qb: data map must not be empty")
-	ErrEmptyRows = fmt.Errorf("qb: batch rows must not be empty")
+	ErrNilBuilder = fmt.Errorf("qb: builder is nil")
+	ErrNoTable    = fmt.Errorf("qb: table name must not be empty")
+	ErrEmptyData  = fmt.Errorf("qb: data map must not be empty")
+	ErrEmptyRows  = fmt.Errorf("qb: batch rows must not be empty")
 )
 
 func tooManyParamsErr(got int) error {

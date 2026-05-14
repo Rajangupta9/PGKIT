@@ -12,9 +12,14 @@ type joinClause struct {
 }
 
 // Join appends any JOIN variant.
-// table and condition are written verbatim — never pass user input directly.
+// table is quoted as a table expression; condition is written verbatim.
+// Never pass user input directly to condition.
 // For CROSS JOIN pass "" as condition.
 func (b *Builder) Join(kind JoinType, table, condition string) *Builder {
+	if !isJoinType(kind) {
+		b.errs = append(b.errs, fmt.Errorf("qb: invalid join type %q", kind))
+		return b
+	}
 	b.joins = append(b.joins, joinClause{kind: kind, table: table, condition: condition})
 	return b
 }
@@ -39,10 +44,23 @@ func (b *Builder) FullJoin(table, condition string) *Builder {
 //
 //	LEFT JOIN LATERAL (SELECT …) AS alias ON TRUE
 func (b *Builder) LateralJoin(kind JoinType, sub *Builder, alias string) *Builder {
+	if !isJoinType(kind) {
+		b.errs = append(b.errs, fmt.Errorf("qb: invalid join type %q", kind))
+		return b
+	}
 	if sub == nil {
 		b.errs = append(b.errs, fmt.Errorf("qb: LateralJoin subquery is nil"))
 		return b
 	}
 	b.joins = append(b.joins, joinClause{kind: kind, lateral: true, sub: sub, alias: alias})
 	return b
+}
+
+func isJoinType(kind JoinType) bool {
+	switch kind {
+	case JoinInner, JoinLeft, JoinRight, JoinFull, JoinCross:
+		return true
+	default:
+		return false
+	}
 }

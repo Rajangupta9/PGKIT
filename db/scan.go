@@ -27,6 +27,9 @@ func QueryInto[T any](ctx context.Context, c *Client, b *qb.Builder) ([]T, error
 	if err != nil {
 		return nil, err
 	}
+	ctx, cancel := c.exec.withTimeout(ctx)
+	defer cancel()
+
 	rows, err := pool.Query(ctx, sql, args...)
 	if err != nil {
 		return nil, fmt.Errorf("db/scan: query: %w", err)
@@ -56,6 +59,9 @@ func QueryOneInto[T any](ctx context.Context, c *Client, b *qb.Builder) (*T, err
 	if err != nil {
 		return nil, err
 	}
+	ctx, cancel := c.exec.withTimeout(ctx)
+	defer cancel()
+
 	rows, err := pool.Query(ctx, sql, args...)
 	if err != nil {
 		return nil, fmt.Errorf("db/scan: query: %w", err)
@@ -92,6 +98,9 @@ func InsertInto[T any](ctx context.Context, c *Client, b *qb.Builder, data map[s
 	if err != nil {
 		return nil, err
 	}
+	ctx, cancel := c.exec.withTimeout(ctx)
+	defer cancel()
+
 	rows, err := pool.Query(ctx, sql, args...)
 	if err != nil {
 		return nil, fmt.Errorf("db/scan: insert query: %w", err)
@@ -119,6 +128,9 @@ func UpdateInto[T any](ctx context.Context, c *Client, b *qb.Builder, data map[s
 	if err != nil {
 		return nil, err
 	}
+	ctx, cancel := c.exec.withTimeout(ctx)
+	defer cancel()
+
 	rows, err := pool.Query(ctx, sql, args...)
 	if err != nil {
 		return nil, fmt.Errorf("db/scan: update query: %w", err)

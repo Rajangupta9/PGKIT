@@ -111,14 +111,35 @@ func newPoolManager(ctx context.Context, namedPools []NamedPool) (*poolManager, 
 		return nil, err
 	}
 
+	type buildResult struct {
+		name string
+		pool *pgxpool.Pool
+		err  error
+	}
+
 	built := make(map[string]*pgxpool.Pool, len(namedPools))
+	results := make(chan buildResult, len(namedPools))
+
 	for _, np := range namedPools {
-		p, err := buildPool(ctx, np.PoolConfig, np.Name)
-		if err != nil {
-			closeAll(built)
-			return nil, fmt.Errorf("db: pool %q: %w", np.Name, err)
+		go func(np NamedPool) {
+			p, err := buildPool(ctx, np.PoolConfig, np.Name)
+			results <- buildResult{name: np.Name, pool: p, err: err}
+		}(np)
+	}
+
+	var errs []error
+	for range namedPools {
+		r := <-results
+		if r.err != nil {
+			errs = append(errs, fmt.Errorf("db: pool %q: %w", r.name, r.err))
+			continue
 		}
-		built[np.Name] = p
+		built[r.name] = r.pool
+	}
+
+	if len(errs) > 0 {
+		closeAll(built)
+		return nil, errors.Join(errs...)
 	}
 
 	return &poolManager{pools: built}, nil
@@ -193,4 +214,3 @@ func buildPool(ctx context.Context, cfg PoolConfig, name string) (*pgxpool.Pool,
 	}
 	return pool, nil
 }
-

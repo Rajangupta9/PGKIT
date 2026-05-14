@@ -41,32 +41,30 @@ func quoteIdentExpr(expr string) string {
 	return pgx.Identifier{expr}.Sanitize()
 }
 
+// quoteIdentRef quotes a column/reference path strictly. Unlike
+// quoteIdentExpr, it never treats spaces, parentheses, or operators as raw SQL.
+// Use this for structured APIs where the caller is expected to pass an
+// identifier, not an expression.
+func quoteIdentRef(ref string) string {
+	parts := strings.Split(strings.TrimSpace(ref), ".")
+	for i, p := range parts {
+		parts[i] = pgx.Identifier{strings.TrimSpace(p)}.Sanitize()
+	}
+	return strings.Join(parts, ".")
+}
+
 // quoteTableExpr handles: plain, schema.table, table alias.
 func quoteTableExpr(expr string) string {
 	expr = strings.TrimSpace(expr)
-	if strings.HasPrefix(expr, `"`) || strings.HasPrefix(expr, "(") {
-		return expr
+	fields := strings.Fields(expr)
+	switch {
+	case len(fields) == 1:
+		return quoteIdentRef(fields[0])
+	case len(fields) == 2:
+		return quoteIdentRef(fields[0]) + " " + pgx.Identifier{fields[1]}.Sanitize()
+	case len(fields) == 3 && strings.EqualFold(fields[1], "AS"):
+		return quoteIdentRef(fields[0]) + " AS " + pgx.Identifier{fields[2]}.Sanitize()
+	default:
+		return pgx.Identifier{expr}.Sanitize()
 	}
-	if strings.Contains(expr, ".") {
-		dotIdx := strings.Index(expr, ".")
-		schema := expr[:dotIdx]
-		rest := expr[dotIdx+1:]
-		if spaceIdx := strings.Index(rest, " "); spaceIdx >= 0 {
-			table := rest[:spaceIdx]
-			alias := strings.TrimSpace(rest[spaceIdx+1:])
-			return pgx.Identifier{schema}.Sanitize() + "." +
-				pgx.Identifier{table}.Sanitize() + " " +
-				pgx.Identifier{alias}.Sanitize()
-		}
-		return pgx.Identifier{schema}.Sanitize() + "." + pgx.Identifier{rest}.Sanitize()
-	}
-	if spaceIdx := strings.Index(expr, " "); spaceIdx >= 0 {
-		table := expr[:spaceIdx]
-		alias := strings.TrimSpace(expr[spaceIdx+1:])
-		if !strings.Contains(alias, " ") {
-			return pgx.Identifier{table}.Sanitize() + " " + pgx.Identifier{alias}.Sanitize()
-		}
-		return expr
-	}
-	return pgx.Identifier{expr}.Sanitize()
 }
