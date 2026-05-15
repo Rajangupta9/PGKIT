@@ -66,10 +66,19 @@ type rawExpr struct {
 }
 
 // Condition is a single predicate in a WHERE clause.
+// Prefer the Where* constructor functions over building Condition literals directly.
 type Condition struct {
-	Column   string
+	// Column is the quoted column name or qualified reference (e.g. "price",
+	// "orders.total"). Ignored for OpExists / OpNotExists / OpRaw.
+	Column string
+
+	// Operator is the SQL operator to apply. Use the Op* constants.
 	Operator Operator
-	Value    any
+
+	// Value is the right-hand side of the predicate. For OpIn / OpNotIn it
+	// must be a slice; for OpBetween / OpNotBetween a two-element slice; for
+	// OpIsNull / OpNotNull it is ignored; for OpRaw it is a rawExpr.
+	Value any
 
 	// Sub is set for EXISTS / NOT EXISTS / column-IN-subquery conditions.
 	Sub *Builder

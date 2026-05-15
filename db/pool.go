@@ -12,16 +12,39 @@ import (
 )
 
 // PoolConfig holds settings for a single named connection pool.
-// ConnString is required; all other fields have built-in defaults.
+// ConnString is required; all other fields default to production-safe values
+// when left at zero.
 type PoolConfig struct {
-	ConnString        string
-	MaxConns          int32
-	MinConns          int32
-	MaxConnIdleTime   time.Duration
-	MaxConnLifetime   time.Duration
+	// ConnString is the libpq-compatible connection string or DSN.
+	// Example: "postgres://user:pass@host:5432/dbname?sslmode=require"
+	ConnString string
+
+	// MaxConns is the maximum number of open connections. Default: 10.
+	MaxConns int32
+
+	// MinConns is the minimum number of idle connections kept open. Default: 2.
+	MinConns int32
+
+	// MaxConnIdleTime is how long a connection may sit idle before being
+	// closed. Default: 5 minutes.
+	MaxConnIdleTime time.Duration
+
+	// MaxConnLifetime is the maximum total lifetime of a connection.
+	// Default: 1 hour.
+	MaxConnLifetime time.Duration
+
+	// HealthCheckPeriod is how often idle connections are pinged.
+	// Default: 1 minute.
 	HealthCheckPeriod time.Duration
-	ConnectTimeout    time.Duration
-	ForceIPv4         bool
+
+	// ConnectTimeout is the deadline applied to each initial connection
+	// attempt and to the startup ping. Default: 20 seconds.
+	ConnectTimeout time.Duration
+
+	// ForceIPv4 rejects IPv6 literals and fails if no A record exists for the
+	// host. Use on environments without an IPv6 internet route (e.g. GCP Cloud
+	// Run). When false (default) IPv4 is preferred but IPv6 is the fallback.
+	ForceIPv4 bool
 }
 
 func (c *PoolConfig) applyDefaults() {
@@ -45,9 +68,12 @@ func (c *PoolConfig) applyDefaults() {
 	}
 }
 
-// NamedPool pairs a name with its pool configuration.
+// NamedPool pairs a logical name with its pool configuration.
 // Each NamedPool can have completely independent credentials and DSN.
+// The name is used to retrieve the pool via [Client.Pool] and is referenced
+// internally by convention ("read", "write").
 type NamedPool struct {
+	// Name is the unique identifier for this pool, e.g. "read" or "write".
 	Name string
 	PoolConfig
 }

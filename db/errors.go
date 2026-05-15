@@ -8,7 +8,12 @@ import (
 )
 
 var (
-	ErrNoRows    = errors.New("db: no rows found")
+	// ErrNoRows is returned by QueryOne, QueryOneInto, and scan helpers when
+	// the query matches no rows. Use [IsNoRows] to check for this error.
+	ErrNoRows = errors.New("db: no rows found")
+
+	// ErrEmptyRows is returned by [Client.SendWrite] and [Client.SendRead]
+	// when a Batch with no queued queries is submitted.
 	ErrEmptyRows = errors.New("db: batch rows must not be empty")
 )
 

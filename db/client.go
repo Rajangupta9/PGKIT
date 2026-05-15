@@ -1,23 +1,3 @@
-// Package db provides PostgreSQL connection pooling and query execution.
-// It depends on github.com/rajangupta9/pgkit/qb for query building.
-//
-// Use qb standalone when you only need to build SQL strings.
-// Use db when you need pool management, transactions, and execution.
-//
-// Create a client with one or more named pools, each with its own credentials:
-//
-//	client, err := db.New(ctx, db.Config{},
-//	    db.NamedPool{Name: "write", PoolConfig: db.PoolConfig{ConnString: writeDSN}},
-//	    db.NamedPool{Name: "read",  PoolConfig: db.PoolConfig{ConnString: readDSN}},
-//	)
-//
-// Access a pool by name:
-//
-//	pool := client.Pool("read") // *pgxpool.Pool
-//
-// Or use the high-level query API (uses "read"/"write" pools by convention):
-//
-//	rows, err := client.Query(ctx, client.QB("users").Limit(20))
 package db
 
 import (

@@ -1,35 +1,3 @@
-// Package qb is a standalone PostgreSQL query builder.
-// It has no dependency on any database driver beyond pgx (used only for
-// identifier quoting). Import it without importing pool or connection code.
-//
-//	import "github.com/rajangupta9/pgkit/qb"
-//
-//	sql, args, err := qb.New("students").
-//	    Columns("id", "name").
-//	    Where(qb.Where("school_id", qb.OpEq, schoolID)).
-//	    Where(qb.WhereExists(
-//	        qb.New("classes").Where(qb.Where("id", qb.OpEq, classID)),
-//	    )).
-//	    OrderBy("name", qb.Asc, qb.NullsLast).
-//	    Limit(20).
-//	    BuildSelect()
-//
-// File layout (each concern lives in its own file for easy debugging):
-//
-//	types.go    — enum-like constants (JoinType, SortDir, LockMode, …)
-//	builder.go  — Builder struct, New, Clone, lifecycle (this file)
-//	quote.go    — identifier sanitization (SECURITY-CRITICAL)
-//	params.go   — placeholder helpers ($N shifting, ? injection)
-//	select.go   — Columns/Distinct/WindowCol + BuildSelect
-//	insert.go   — OnConflict + BuildInsert + BuildInsertBatch
-//	update.go   — BuildUpdate
-//	delete.go   — BuildDelete
-//	where.go    — Where, WhereGroup, condition rendering
-//	join.go     — INNER/LEFT/RIGHT/FULL/LATERAL joins
-//	cte.go      — With, WithRecursive
-//	union.go    — Union, UnionAll
-//	clauses.go  — GROUP BY, ORDER BY, LIMIT, OFFSET, locking, RETURNING setters
-//	condition.go— Operator constants + Condition constructors
 package qb
 
 import "strings"
