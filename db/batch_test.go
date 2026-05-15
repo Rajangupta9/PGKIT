@@ -146,7 +146,7 @@ func TestBatch_AddDelete_NilBuilder(t *testing.T) {
 
 func TestBatch_FirstErrorWins(t *testing.T) {
 	b := NewBatch().
-		AddSelect(nil).               // first error
+		AddSelect(nil).             // first error
 		AddInsert(qb.New("x"), nil) // second error — should be ignored
 	if b.err == nil {
 		t.Fatal("expected first error to be retained")
