@@ -11,7 +11,7 @@ import (
 	"github.com/rajangupta9/pgkit/qb"
 )
 
-// TxOptions mirrors pgx.TxOptions for caller convenience.
+// TxOptions is a convenience alias for pgx.TxOptions.
 type TxOptions = pgx.TxOptions
 
 // Tx is the transaction API exposed to WithTx callbacks.

@@ -10,9 +10,9 @@ import (
 
 // Notification is a LISTEN/NOTIFY message received from PostgreSQL.
 type Notification struct {
-	Channel string
-	Payload string
-	PID     uint32
+	Channel string // PostgreSQL notification channel.
+	Payload string // Notification payload.
+	PID     uint32 // Process ID of the sender.
 }
 
 // Notify sends a notification to channel with payload.
