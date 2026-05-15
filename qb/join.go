@@ -24,18 +24,22 @@ func (b *Builder) Join(kind JoinType, table, condition string) *Builder {
 	return b
 }
 
+// InnerJoin appends an INNER JOIN clause.
 func (b *Builder) InnerJoin(table, condition string) *Builder {
 	return b.Join(JoinInner, table, condition)
 }
 
+// LeftJoin appends a LEFT JOIN clause.
 func (b *Builder) LeftJoin(table, condition string) *Builder {
 	return b.Join(JoinLeft, table, condition)
 }
 
+// RightJoin appends a RIGHT JOIN clause.
 func (b *Builder) RightJoin(table, condition string) *Builder {
 	return b.Join(JoinRight, table, condition)
 }
 
+// FullJoin appends a FULL JOIN clause.
 func (b *Builder) FullJoin(table, condition string) *Builder {
 	return b.Join(JoinFull, table, condition)
 }

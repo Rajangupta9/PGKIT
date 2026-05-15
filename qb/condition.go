@@ -75,6 +75,8 @@ type Condition struct {
 	Sub *Builder
 }
 
+// Validate checks that the condition contains the required fields for the
+// selected operator.
 func (c Condition) Validate() error {
 	switch c.Operator {
 	case OpExists, OpNotExists:
@@ -150,25 +152,33 @@ func OrGroup(conds ...Condition) condGroup {
 
 // ─── Condition constructors ──────────────────────────────────────────────────
 
+// Where constructs a simple column predicate.
 func Where(col string, op Operator, val any) Condition {
 	return Condition{Column: col, Operator: op, Value: val}
 }
 
-func WhereNull(col string) Condition    { return Condition{Column: col, Operator: OpIsNull} }
+// WhereNull constructs a predicate for IS NULL.
+func WhereNull(col string) Condition { return Condition{Column: col, Operator: OpIsNull} }
+
+// WhereNotNull constructs a predicate for IS NOT NULL.
 func WhereNotNull(col string) Condition { return Condition{Column: col, Operator: OpNotNull} }
 
+// WhereIn constructs a predicate for IN with a slice of values.
 func WhereIn(col string, vals any) Condition {
 	return Condition{Column: col, Operator: OpIn, Value: vals}
 }
 
+// WhereNotIn constructs a predicate for NOT IN with a slice of values.
 func WhereNotIn(col string, vals any) Condition {
 	return Condition{Column: col, Operator: OpNotIn, Value: vals}
 }
 
+// WhereBetween constructs a BETWEEN predicate.
 func WhereBetween(col string, low, high any) Condition {
 	return Condition{Column: col, Operator: OpBetween, Value: []any{low, high}}
 }
 
+// WhereNotBetween constructs a NOT BETWEEN predicate.
 func WhereNotBetween(col string, low, high any) Condition {
 	return Condition{Column: col, Operator: OpNotBetween, Value: []any{low, high}}
 }
