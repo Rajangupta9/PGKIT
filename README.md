@@ -198,6 +198,12 @@ type Operator string
 **Array containment:**
 - `OpArrayContains` (`@>`), `OpArrayContainedBy` (`<@`), `OpArrayOverlap` (`&&`)
 
+---
+
+## License
+
+This project is licensed under the MIT License. See the `LICENSE` file for details.
+
 **JSONB operators:**
 - `OpJSONContains` (`@>`), `OpJSONContainedBy` (`<@`), `OpJSONHasKey` (`?`), `OpJSONHasAllKeys` (`?&`), `OpJSONHasAnyKey` (`?|`)
 
